@@ -48,12 +48,21 @@ def operate(value, operation):
             print('Weird')
             return value 
 
-def monkey_business(monkeys):
-    for r in range(20):
+def monkey_business(monkeys, rounds):
+    if(rounds == 10000):
+        mod = 1
+        for monkey in monkeys:
+            mod *= monkey[3]
+    for r in range(rounds):
+        if(r % 10 == 0):
+            print(f'round {r}')
         for i in range(len(monkeys)):
             for j in range(len(monkeys[i][1])):
                 monkeys[i][1][j] = operate(monkeys[i][1][j], monkeys[i][2])
-                monkeys[i][1][j] = monkeys[i][1][j] // 3 # divide by 3 and round down
+                if(rounds == 20): # just for part 1
+                    monkeys[i][1][j] = monkeys[i][1][j] // 3 # divide by 3 and round down
+                elif(rounds == 10000):
+                    monkeys[i][1][j] %= mod # modular math
                 if(monkeys[i][1][j] % monkeys[i][3] == 0): # if true
                     monkeys[monkeys[i][4]][1].append(monkeys[i][1][j])
                 else:  # if false
@@ -72,12 +81,15 @@ def evaluate_monkey_activity(monkeys):
 
 data = ld.load_data('day11example1.txt')
 monkeys = load_monkeys(data)
-monkeys = monkey_business(monkeys)
+monkeys = monkey_business(monkeys, 20)
 print(f'Example: {evaluate_monkey_activity(monkeys)}')
 
 data = ld.load_data('input11.txt')
 monkeys = load_monkeys(data)
-monkeys = monkey_business(monkeys)
-print(f'Part 1: {evaluate_monkey_activity(monkeys)}')
+monkeys = monkey_business(monkeys, 20)
+print(f'Part 1: {evaluate_monkey_activity(monkeys)}') # 57348 was the answer
 
 # Part 2
+monkeys = load_monkeys(data)
+monkeys = monkey_business(monkeys, 10000)
+print(f'Part 2: {evaluate_monkey_activity(monkeys)}')
