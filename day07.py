@@ -7,44 +7,6 @@ def load_data(filename):
             lines.append(line.strip('\n'))
     return lines
 
-def build_filesystem_tree(data):
-    filesystem = {}
-    for line in data:
-        if(line[0:4] == '$ cd'): 
-            if(line[5:] == '..'):
-                print('go up a level')
-                for k, v in filesystem.items():
-                    print(k, v)
-
-            else:
-                key = line[5:]
-                if key not in filesystem:
-                    filesystem[key] = {}
-                print('create directory if it does not exist ' + line[5:])
-                print('change to that directory')
-
-        elif(line[0:4] == '$ ls'):
-            print('list')
-            #pass
-        else:
-            if(line[0:3] == 'dir'):
-                key = line[3:]
-                print('create directory ' + line[3:])
-                if key not in filesystem:
-                    filesystem[key] = {}
-            else: 
-                size, filename = line.split(' ')
-                print('create file ' + filename + ' with size ' + size)
-                filesystem[key].append([filename, size])
-
-    return filesystem
-
-
-# filesystem = build_filesystem_tree(data)
-# for elem in filesystem:
-#     print(elem)
-# print(filesystem)
-
 def dict_of_dirs(data):
     dirs = {}
     # keys will be the paths of directories, values will be the total size
@@ -75,23 +37,12 @@ def calculate_sizes(dirs, data):
     for path in dirs:
         if(path != '/'):
             dir = path.split('/')[-1]
-            #parent_dir = path.split('/')[-2]
         else:
             dir = path 
         dirdir.append(dir)
         for i in range(len(data)):
             line = data[i]
             if(line == '$ cd ' + dir): 
-                # confirm_parent = False
-                # for j in range(i-1, -1, -1): # go up to find the parent directory
-                #     prev = data[j]
-                #     if(prev[:4] == '$ cd '):
-                #         if(prev == '$ cd ' + parent_dir):
-                #             confirm_parent = True
-                #         else:
-                #             confirm_parent = False
-                #             break
-                # if(confirm_parent):
                 levels_in = 1
                 total_size = 0
                 j = i + 1
@@ -110,50 +61,19 @@ def calculate_sizes(dirs, data):
                     else:
                         break 
                 dirs[path] = total_size
-
-    # print(len(dirdir))
-    # print(len(set(dirdir)))
-    # for pathi in dirs:
-    #     for pathj in dirs:
-    #         if(pathi != pathj):
-    #             if(pathi != '/'):
-    #                 diri = pathi.split('/')[-1]
-    #             else:
-    #                 diri = pathi
-    #             if(pathj != '/'):
-    #                 dirj = pathj.split('/')[-1]
-    #             else:
-    #                 dirj = pathj
-    #             if(diri == dirj):
-    #                 print(pathi, pathj)
-
     for k,v in dirs.items():
         if(v <= 100000):
             answer += v       
-
     return answer 
 
 data = load_data('day07example1.txt')
 dirs = dict_of_dirs(data)
 answer = calculate_sizes(dirs, data)
-#print(dirs)
 print(f'Example: {answer}') #95437
 
-# data = load_data('input07.txt')
-# dirs = dict_of_dirs(data)
-# answer = calculate_sizes(dirs, data)
-# print(dirs)
-# print(f'Part 1: {answer}') # 1598125 was too low
-
-# nested dictionary
-# each key is a directory
-# its value is its contents 
-# contents that are directories will be keys: their values will be their contents
-# contents that are files will be combined into one key: its value will be their sizes combined
-# need to add total_size as a value inside of each directory when I cd .. out of it
+# Followed advice from hyper neutrino
 
 data = load_data('input07.txt')
-
 pwd = nd = {}
 ancestors = []
 for line in data:
@@ -189,7 +109,6 @@ def count(dir = nd):
         answer += size 
     # if the size of a directory is too large, only the sizes of its subdirectories are added to answer
     return (size, answer)
-
 
 print(f'Part 1: {count()[1]}')
 
