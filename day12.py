@@ -2,15 +2,18 @@
 
 import load_data as ld 
 import random 
+from collections import deque 
 
 def find_start_and_end(data):
     for i in range(len(data)):
         for j in range(len(data[i])):
             if(data[i][j] == 'S'):
                 start = [i, j]
+                # data[i][j] = 'a'
                 # print(f'start: ({i},{j})')
             elif(data[i][j] == 'E'):
                 end = [i, j]
+                # data[i][j] = 'z'
                 # print(f'end: ({i},{j})')
     return start, end 
 
@@ -45,7 +48,76 @@ def get_score(option, path, data, cur_loc, cur_alt, end):
         score += goal_weight
     elif(opt2end_y > cur2end_y):
         score -= goal_weight
+    # Test 4: alter the score based on looking further ahead
+    # vision = 3
+    # # figure out direction of option
+    # if(delta_x < 0): # left
+    #     # @.......
+    #     # @@......
+    #     # @@@.....
+    #     # @@@@....
+    #     # @@@OS...
+    #     # @@@@....
+    #     # @@@.....
+    #     # @@......
+    #     # @.......
+    #     # S is cur_loc
+    #     # O is option
+    #     grads = []
+    #     for i in range(vision + 1):
+    #         for j in range(-i - 1, i + 1):
+    #             if(i == 0):
+    #                 prev_alt = opt_alt 
+    #             elif(i == 1):
+    #                 if(j == 0):
+    #                     prev_alt = opt_alt 
+    #                 elif((j == -1) or (j == 1)):
+    #                     prev_alt = data[option[0]+i][option[1]]
+    #                 elif(j == -2):
+    #                     prev_alt = data[option[0]+i][option[1]+j+1]
+    #             candidate_alt = get_candidate_alt(data[option[0]+i][option[1]+j])
+    #             grads.append(abs(ord(candidate_alt) - ord(prev_alt)))
+
+
+    # elif(delta_x > 0): # right
+    # elif(delta_y < 0): # down
+    # elif(delta_y > 0): # up
+    # look further ahead in that direction, trying to include the whole cone in that direction
+
+    # Include some more randomness in the score, 
+    # Include a test that looks further ahead, 
+    # Include a test to avoid pits by severely penalizing squares that belong to pits 
     return score
+
+# Write a function that identifies pits, then prevent them from being options, 
+# maybe by replacing their altitude and pretending they are walls
+# could use chr() which is the opposite of ord()  
+def identify_pits(data):
+    for i in range(len(data)):
+        for j in range(len(data[i])):
+            # find maximum gradient of all 4 directions
+            gradients = []
+            cur_alt = get_candidate_alt(data[i][j])
+            if(0 <= i - 1 <= len(data) - 1): # left
+                candidate_alt = get_candidate_alt(data[i-1][j])
+                gradients.append(abs(ord(candidate_alt) - ord(cur_alt)))
+            if(0 <= i + 1 <= len(data) - 1): # right
+                candidate_alt = get_candidate_alt(data[i+1][j])
+                gradients.append(abs(ord(candidate_alt) - ord(cur_alt)))
+            if(0 <= j - 1 <= len(data[0]) - 1): # down
+                candidate_alt = get_candidate_alt(data[i][j-1])
+                gradients.append(abs(ord(candidate_alt) - ord(cur_alt)))
+            if(0 <= j + 1 <= len(data[0]) - 1): # up
+                candidate_alt = get_candidate_alt(data[i][j+1])
+                gradients.append(abs(ord(candidate_alt) - ord(cur_alt)))
+            max_grad = max(gradients)
+            # if(max_grad < 2):
+            #     risk[i][j] = 0
+            # else:
+            #     risk[i][j] = max_grad 
+    # see if there are closed loops of gradients of 2 or greater
+    # print(ord('Ω'))
+    return data 
 
 def get_candidate_alt(datum):
     if(datum == 'E'):
@@ -132,7 +204,6 @@ def find_path(start, end, data):
                 # print('High length to set ratio!')
                 # print(cur_loc, cur_alt)
                 break 
-            
 
     return path, finished 
 
@@ -149,15 +220,57 @@ def simulate_paths(start, end, data):
             print('... but did not finish.')
     return min(path_lengths)
 
-#TODO: path that starts from the end; two paths seek each other and meet in the middle
-
 data = ld.load_data('day12example1.txt')
 start, end = find_start_and_end(data)
-# path = find_path(start, end, data)
 print(f'Example: {simulate_paths(start, end, data)} (should be 31)')
 
-# data = ld.load_data('input12.txt')
-# start, end = find_start_and_end(data)
+data = ld.load_data('input12.txt')
+start, end = find_start_and_end(data)
 # print(f'Part 1: {simulate_paths(start, end, data)}') # 231 was too low
 
+# Learning from hyper neutrino 
+# breadth-first search 
+def ascend(start, end, data):
+    q = deque()
+    q.append((0, start[0], start[1]))
+    visited = {(start[0], start[1])}
 
+    while(q):
+        steps, x, y = q.popleft()
+        for next_x, next_y in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]: # neighbors
+            if((next_x < 0) or (next_x >= len(data)) or (next_y < 0) or (next_y >= len(data[0]))): # checking if that coordinate exists in the grid
+                continue
+            if((next_x, next_y) in visited): # checking if it's already been visited
+                continue
+            if((ord(get_candidate_alt(data[next_x][next_y])) - ord(get_candidate_alt(data[x][y]))) > 1): # checking if it's a cliff 
+                continue
+            if((next_x == end[0]) and (next_y == end[1])): # checking if it's the endpoint
+                return(steps + 1)
+            visited.add((next_x, next_y)) # adding to our set of visited coordinates
+            q.append((steps + 1, next_x, next_y)) # adding to our deque
+    return 0
+
+print(f'Part 1: {ascend(start, end, data)}') # 497 was the answer
+
+# Part 2
+def descend(start, data):
+    q = deque()
+    q.append((0, start[0], start[1]))
+    visited = {(start[0], start[1])}
+
+    while(q):
+        steps, x, y = q.popleft()
+        for next_x, next_y in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]: # neighbors
+            if((next_x < 0) or (next_x >= len(data)) or (next_y < 0) or (next_y >= len(data[0]))): # checking if that coordinate exists in the grid
+                continue
+            if((next_x, next_y) in visited): # checking if it's already been visited
+                continue
+            if((ord(get_candidate_alt(data[next_x][next_y])) - ord(get_candidate_alt(data[x][y]))) < -1): # checking if it's a cliff 
+                continue
+            if(get_candidate_alt(data[next_x][next_y]) == 'a'): # checking if it's at an altitude of a
+                return(steps + 1)
+            visited.add((next_x, next_y)) # adding to our set of visited coordinates
+            q.append((steps + 1, next_x, next_y)) # adding to our deque
+    return 0
+
+print(f'Part 2: {descend(end, data)}')
