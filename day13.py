@@ -44,8 +44,38 @@ def sum_indices_of_pairs_in_correct_order(data):
         print(elements2)
     return sum(correctly_ordered_pairs)
 
-data = ld.load_data('day13example1.txt')
-packets = preprocess(data)
+# data = ld.load_data('day13example1.txt')
+# packets = preprocess(data)
 # print(packets[0])
 # print(packets[1])
-print(f'Example: {sum_indices_of_pairs_in_correct_order(packets)}')
+# print(f'Example: {sum_indices_of_pairs_in_correct_order(packets)}')
+
+# Learning from hyper neutrino 
+
+def f(x, y):
+    if(type(x) == int):
+        if(type(y) == int):
+            return x - y # only the sign matters
+        else:
+            return f([x], y) # putting x into a list to compare it
+    elif(type(y) == int):
+            return f(x, [y]) # putting y into a list to compare it 
+    # otherwise, they are both lists
+    for a, b in zip(x, y): # zip has length of shorter list
+        v = f(a, b)
+        if(v): # if v is non-zero
+            return v # carry on the result 
+    return len(x) - len(y) # seeing if one of them is shorter
+
+def sum_indices(x):
+    total = 0
+    for i, (a, b) in enumerate(x):
+        if(f(eval(a), eval(b)) < 0): # eval treats the string as a python expression 
+            total += i + 1 # add to running sum the index(+1) of the pairs that are in the right order
+    return total
+
+# split into blocks, then into pairs (of strings), and put those into a list 
+x = list(map(str.splitlines, open("data/day13example1.txt").read().strip().split("\n\n")))
+print(f'Example: {sum_indices(x)}')
+x = list(map(str.splitlines, open("data/input13.txt").read().strip().split("\n\n")))
+print(f'Part 1: {sum_indices(x)}')
