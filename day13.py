@@ -79,3 +79,21 @@ x = list(map(str.splitlines, open("data/day13example1.txt").read().strip().split
 print(f'Example: {sum_indices(x)}')
 x = list(map(str.splitlines, open("data/input13.txt").read().strip().split("\n\n")))
 print(f'Part 1: {sum_indices(x)}')
+
+# Part 2
+
+def decoder_key(x):
+    i2 = 1
+    i6 = 2
+    for a in x:
+        if(f(a, [[2]]) < 0):
+            i2 += 1
+            i6 += 1
+        elif(f(a, [[6]]) < 0):
+            i6 += 1
+    return i2 * i6
+
+x = list(map(eval, open("data/day13example1.txt").read().split()))
+print(f'Example: {decoder_key(x)}')
+x = list(map(eval, open("data/input13.txt").read().split()))
+print(f'Part 2: {decoder_key(x)}')
